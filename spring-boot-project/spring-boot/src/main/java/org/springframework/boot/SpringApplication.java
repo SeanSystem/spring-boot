@@ -262,12 +262,17 @@ public class SpringApplication {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
+		// 默认为空
 		this.resourceLoader = resourceLoader;
 		Assert.notNull(primarySources, "PrimarySources must not be null");
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+		// 获取应用类型，支持三种应用类型
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
+		// 从META-INF/spring.factories中加载ApplicationContextInitializer类示例，给initializers属性赋值
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+		// 从META-INF/spring.factories中加载ApplicationListener类示例，给listeners属性赋值
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+		// 设置应用启动类
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
 
@@ -275,6 +280,7 @@ public class SpringApplication {
 		try {
 			StackTraceElement[] stackTrace = new RuntimeException().getStackTrace();
 			for (StackTraceElement stackTraceElement : stackTrace) {
+				// 通过遍历程序调用栈，获取包含main方法的类作为应用启动类
 				if ("main".equals(stackTraceElement.getMethodName())) {
 					return Class.forName(stackTraceElement.getClassName());
 				}
@@ -298,10 +304,13 @@ public class SpringApplication {
 		ConfigurableApplicationContext context = null;
 		Collection<SpringBootExceptionReporter> exceptionReporters = new ArrayList<>();
 		configureHeadlessProperty();
+		// 获取SpringApplicationRunListeners监听，作用于springboot项目启动的生命周期
 		SpringApplicationRunListeners listeners = getRunListeners(args);
 		listeners.starting();
 		try {
+			// 将指定的参数封装到ApplicationArguments中
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+			// 配置环境参数
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
 			configureIgnoreBeanInfo(environment);
 			Banner printedBanner = printBanner(environment);
@@ -336,9 +345,12 @@ public class SpringApplication {
 	private ConfigurableEnvironment prepareEnvironment(SpringApplicationRunListeners listeners,
 			ApplicationArguments applicationArguments) {
 		// Create and configure the environment
+		// 创建并配置环境参数
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
+		// 配置环境参数
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
 		ConfigurationPropertySources.attach(environment);
+		// 环境配置完成通知
 		listeners.environmentPrepared(environment);
 		bindToSpringApplication(environment);
 		if (!this.isCustomEnvironment) {
@@ -406,6 +418,7 @@ public class SpringApplication {
 
 	private SpringApplicationRunListeners getRunListeners(String[] args) {
 		Class<?>[] types = new Class<?>[] { SpringApplication.class, String[].class };
+		// 从META-INF/spring.factories中获取所有SpringApplicationRunListener类实例，并封装到SpringApplicationRunListeners
 		return new SpringApplicationRunListeners(logger,
 				getSpringFactoriesInstances(SpringApplicationRunListener.class, types, this, args));
 	}
@@ -446,8 +459,10 @@ public class SpringApplication {
 		if (this.environment != null) {
 			return this.environment;
 		}
+		// 根据不同的应用类型返回对应的配置
 		switch (this.webApplicationType) {
 		case SERVLET:
+			// web类型应用
 			return new StandardServletEnvironment();
 		case REACTIVE:
 			return new StandardReactiveWebEnvironment();
@@ -468,11 +483,14 @@ public class SpringApplication {
 	 * @see #configurePropertySources(ConfigurableEnvironment, String[])
 	 */
 	protected void configureEnvironment(ConfigurableEnvironment environment, String[] args) {
+		// 添加数据转换器
 		if (this.addConversionService) {
 			ConversionService conversionService = ApplicationConversionService.getSharedInstance();
 			environment.setConversionService((ConfigurableConversionService) conversionService);
 		}
+		// 如果启动参数中指定了配置信息，添加到配置环境中
 		configurePropertySources(environment, args);
+		// 配置profile
 		configureProfiles(environment, args);
 	}
 
