@@ -74,7 +74,9 @@ class SpringApplicationBannerPrinter {
 
 	private Banner getBanner(Environment environment) {
 		Banners banners = new Banners();
+		// 获取图片banner
 		banners.addIfNotNull(getImageBanner(environment));
+		// 获取text类型banner
 		banners.addIfNotNull(getTextBanner(environment));
 		if (banners.hasAtLeastOneBanner()) {
 			return banners;
@@ -82,10 +84,12 @@ class SpringApplicationBannerPrinter {
 		if (this.fallbackBanner != null) {
 			return this.fallbackBanner;
 		}
+		// 未自定义banner，则加载默认的SpringBootBanner
 		return DEFAULT_BANNER;
 	}
 
 	private Banner getTextBanner(Environment environment) {
+		// 如果指定了spring.banner.location，则从指定路径加载，否则默认加载banner.txt文件
 		String location = environment.getProperty(BANNER_LOCATION_PROPERTY, DEFAULT_BANNER_LOCATION);
 		Resource resource = this.resourceLoader.getResource(location);
 		if (resource.exists()) {
@@ -95,11 +99,13 @@ class SpringApplicationBannerPrinter {
 	}
 
 	private Banner getImageBanner(Environment environment) {
+		// 如果指定了spring.banner.image.location，则从指定路径加载
 		String location = environment.getProperty(BANNER_IMAGE_LOCATION_PROPERTY);
 		if (StringUtils.hasLength(location)) {
 			Resource resource = this.resourceLoader.getResource(location);
 			return resource.exists() ? new ImageBanner(resource) : null;
 		}
+		// 默认加载以banner开头，文件类型为gig、png、jpg类型图片
 		for (String ext : IMAGE_EXTENSION) {
 			Resource resource = this.resourceLoader.getResource("banner." + ext);
 			if (resource.exists()) {

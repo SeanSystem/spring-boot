@@ -313,17 +313,24 @@ public class SpringApplication {
 			// 配置环境参数
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
 			configureIgnoreBeanInfo(environment);
+			// 打印springboot启动图标
 			Banner printedBanner = printBanner(environment);
+			// 根据应用类型创建对应的ApplicationContext
 			context = createApplicationContext();
+			// 获取META-INF/spring.factories中配置的SpringBootExceptionReporter类实例
 			exceptionReporters = getSpringFactoriesInstances(SpringBootExceptionReporter.class,
 					new Class[] { ConfigurableApplicationContext.class }, context);
+			// 对applicationContext做准备工作
 			prepareContext(context, environment, listeners, applicationArguments, printedBanner);
+			// 对spring容器初始化工作
 			refreshContext(context);
+			// 预留方法
 			afterRefresh(context, applicationArguments);
 			stopWatch.stop();
 			if (this.logStartupInfo) {
 				new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), stopWatch);
 			}
+			// 发布ApplicationStartedEvent事件通知
 			listeners.started(context);
 			callRunners(context, applicationArguments);
 		}
@@ -333,6 +340,7 @@ public class SpringApplication {
 		}
 
 		try {
+			// 发送ApplicationReadyEvent事件通知
 			listeners.running(context);
 		}
 		catch (Throwable ex) {
@@ -374,10 +382,15 @@ public class SpringApplication {
 
 	private void prepareContext(ConfigurableApplicationContext context, ConfigurableEnvironment environment,
 			SpringApplicationRunListeners listeners, ApplicationArguments applicationArguments, Banner printedBanner) {
+		// 设置环境参数
 		context.setEnvironment(environment);
+		// applicationContext的后置处理
 		postProcessApplicationContext(context);
+		// 执行ApplicationContextInitializer实例的initialize方法
 		applyInitializers(context);
+		// 发送ApplicationContextInitializedEvent事件通知
 		listeners.contextPrepared(context);
+		// 打印启动日志信息
 		if (this.logStartupInfo) {
 			logStartupInfo(context.getParent() == null);
 			logStartupProfileInfo(context);
@@ -393,9 +406,11 @@ public class SpringApplication {
 					.setAllowBeanDefinitionOverriding(this.allowBeanDefinitionOverriding);
 		}
 		// Load the sources
+		// 加载所有资源，默认只有springboot入口类
 		Set<Object> sources = getAllSources();
 		Assert.notEmpty(sources, "Sources must not be empty");
 		load(context, sources.toArray(new Object[0]));
+		// 发送ApplicationPreparedEvent事件通知
 		listeners.contextLoaded(context);
 	}
 
@@ -560,6 +575,7 @@ public class SpringApplication {
 	}
 
 	private Banner printBanner(ConfigurableEnvironment environment) {
+		// 如果banner图标禁用，直接返回
 		if (this.bannerMode == Banner.Mode.OFF) {
 			return null;
 		}
@@ -585,12 +601,14 @@ public class SpringApplication {
 			try {
 				switch (this.webApplicationType) {
 				case SERVLET:
+					// web应用对应AnnotationConfigServletWebServerApplicationContext
 					contextClass = Class.forName(DEFAULT_SERVLET_WEB_CONTEXT_CLASS);
 					break;
 				case REACTIVE:
 					contextClass = Class.forName(DEFAULT_REACTIVE_WEB_CONTEXT_CLASS);
 					break;
 				default:
+					// 默认应用对应AnnotationConfigApplicationContext
 					contextClass = Class.forName(DEFAULT_CONTEXT_CLASS);
 				}
 			}
@@ -600,6 +618,7 @@ public class SpringApplication {
 						ex);
 			}
 		}
+		// 通过反射创建对应的ApplicationContext类实例
 		return (ConfigurableApplicationContext) BeanUtils.instantiateClass(contextClass);
 	}
 
@@ -609,10 +628,12 @@ public class SpringApplication {
 	 * @param context the application context
 	 */
 	protected void postProcessApplicationContext(ConfigurableApplicationContext context) {
+		// 设置beanName生成器
 		if (this.beanNameGenerator != null) {
 			context.getBeanFactory().registerSingleton(AnnotationConfigUtils.CONFIGURATION_BEAN_NAME_GENERATOR,
 					this.beanNameGenerator);
 		}
+		// 设置resourceLoader
 		if (this.resourceLoader != null) {
 			if (context instanceof GenericApplicationContext) {
 				((GenericApplicationContext) context).setResourceLoader(this.resourceLoader);
@@ -621,6 +642,7 @@ public class SpringApplication {
 				((DefaultResourceLoader) context).setClassLoader(this.resourceLoader.getClassLoader());
 			}
 		}
+		// 设置ConversionService
 		if (this.addConversionService) {
 			context.getBeanFactory().setConversionService(ApplicationConversionService.getSharedInstance());
 		}
